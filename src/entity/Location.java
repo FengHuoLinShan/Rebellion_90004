@@ -1,6 +1,8 @@
 package entity;
 
-//记录每个turtle和地块的横纵坐标
+/**
+ * 记录每个turtle和地块的横纵坐标
+ */
 public class Location {
     private int x,y;
 

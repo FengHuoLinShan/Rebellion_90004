@@ -10,7 +10,7 @@ public abstract class Turtle {
     }
 
     /**
-     * Overrides:在控制agent移动时，先随机获取VISION内的randomLoc，再检测isEmptyOrJailedOnly()
+     * Overrides:在控制agent移动时，先随机获取VISION内的randomLoc，再检测isEmptyOrJailedOnly()。Cops只在VISION内有active才move
      */
     public void moveTo(Location randomLoc){
         location = randomLoc;

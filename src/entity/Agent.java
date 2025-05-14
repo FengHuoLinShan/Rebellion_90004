@@ -8,9 +8,9 @@ public class Agent extends Turtle {
     private boolean active = false;
     private int jail_term = 0;
 
-
-    public Agent(String color, Location location, double risk_aversion, double perceived_hardship) {
-        this.color = color;
+    //创建时每个agent有不同的参数（color是固定的）
+    public Agent(Location location, double risk_aversion, double perceived_hardship) {
+        this.color = AGENT_COLOR;
         this.location = location;
         this.risk_aversion = risk_aversion;
         this.perceived_hardship = perceived_hardship;
@@ -20,8 +20,11 @@ public class Agent extends Turtle {
         return jail_term > 0;
     }
 
-    public void beingActive(double estimated_arrest_probability, double threshold, double government_legitimacy){
-        active = (getGrievance(government_legitimacy) - risk_aversion * estimated_arrest_probability
+    /**
+     * 更新（判断）active状态
+     */
+    public void beingActive(double threshold, double government_legitimacy, World w){
+        active = (getGrievance(government_legitimacy) - risk_aversion * estimateArrestProbability(w)
                 > threshold);
     }
 
@@ -44,11 +47,17 @@ public class Agent extends Turtle {
         return jail_term;
     }
 
+    /**
+     * 服刑时间-1
+     */
     public void decre_Jail_term(int jail_term) {
         this.jail_term--;
     }
 
-    public void setJailTerm(int nextInt) {
+    /**
+     * 被捕时随机决定服刑时间
+     */
+    public void setJailTerm(int jail_term) {
         this.jail_term = jail_term;
     }
 

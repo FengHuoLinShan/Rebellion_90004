@@ -14,7 +14,9 @@ public class Patch {
         this.turtle = null;
     }
 
-    //判断此地块是否为空（或者仅关押）
+    /**
+     * 判断此地块是否为空（或者仅关押）
+     */
     public boolean isEmptyOrJailedOnly(){
         boolean empty = (turtle == null);
         boolean JailedOnly = false;

@@ -5,8 +5,8 @@ import java.util.Random;
 import static entity.AppConfig.*;
 
 public class Cop extends Turtle{
-     protected Cop(String color, Location location){
-        this.color = color;
+     protected Cop(Location location){
+        this.color = COPS_COLOR;
         this.location = location;
     }
 

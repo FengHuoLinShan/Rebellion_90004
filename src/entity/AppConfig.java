@@ -9,6 +9,8 @@ package entity;
  * GOVERNMENT_LEGITIMACY = 0.82
  * INITIAL_COP_DENSITY = 4.0%
  * INITIAL_AGENT_DENSITY = 70.0%
+ * AGENT_COLOR = "GREEN"
+ * COPS_COLOR = "RED"
  */
 public final class AppConfig {
     public static final double K = 2.3;
@@ -19,6 +21,8 @@ public final class AppConfig {
     public static final double INITIAL_COP_DENSITY = 0.04;
     public static final double INITIAL_AGENT_DENSITY = 0.7;
 
+    public static final String AGENT_COLOR = "GREEN";
+    public static final String COPS_COLOR = "RED";
     private AppConfig() {
         // 防止实例化
     }
