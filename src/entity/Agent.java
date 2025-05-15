@@ -20,6 +20,10 @@ public class Agent extends Turtle {
         return jail_term > 0;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
     /**
      * 更新（判断）active状态
      */
@@ -40,7 +44,7 @@ public class Agent extends Turtle {
     }
 
     public void moveTo(Location randomLoc){
-        //todo:与VISION算法有关，待完善
+        this.location = randomLoc;
     }
 
     public int getJail_term() {

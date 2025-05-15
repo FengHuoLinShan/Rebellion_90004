@@ -6,6 +6,14 @@ public class Patch {
     private Location location;
     Turtle turtle;
 
+    public Patch(Location location) {
+        this.location = location;
+    }
+
+    public Location getLocation() {
+        return location;
+    }
+
     public void addTurtle(Turtle t){
         this.turtle = t;
     }
@@ -25,7 +33,4 @@ public class Patch {
         }
         return empty||JailedOnly;
     }
-
-
-
 }
