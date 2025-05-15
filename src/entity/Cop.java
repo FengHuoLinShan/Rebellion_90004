@@ -4,10 +4,14 @@ import java.util.Random;
 
 import static entity.AppConfig.*;
 
-public class Cop extends Turtle{
-     protected Cop(Location location){
+public class Cop extends Turtle {
+    public Cop(Location location) {
         this.color = COPS_COLOR;
         this.location = location;
+    }
+
+    public void moveTo(Location newLocation) {
+        this.location = newLocation;
     }
 
     public void arrest(World world) {
@@ -15,7 +19,7 @@ public class Cop extends Turtle{
         suspect.ifPresent(agent -> {
             this.moveTo(agent.getLocation());
             agent.setActive(false);
-            agent.setJailTerm(new Random().nextInt(MAX_JAIL_TERM));
+            agent.setJailTerm(new Random().nextInt(MAX_JAIL_TERM) + 1);
         });
     }
 }
