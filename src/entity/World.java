@@ -195,5 +195,9 @@ public class World {
         System.out.println("================\n");
     }
 
+    public int getCopsCount() {
+        return cops.size();
+    }
+
     // ...
 }

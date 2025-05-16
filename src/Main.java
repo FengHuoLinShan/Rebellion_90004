@@ -5,6 +5,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 import java.util.ArrayList;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class Main {
     public static void main(String[] args) {
@@ -35,27 +40,60 @@ public class Main {
         frame.setVisible(true);
 
         // Simulation parameters
-        int steps = 172; // You can adjust this
-        int delay = 100; // ms per step
+        int steps = 100; // 
+        int delay = 0; // ms per step
+
+        // Create CSV file and write header
+        try {
+            Files.write(Paths.get("simulation_results.csv"), 
+                "TimeStep,ActiveAgents,JailedAgents,QuietAgents,TotalCops\n".getBytes());
+        } catch (IOException ex) {
+            System.err.println("Error creating CSV file: " + ex.getMessage());
+            return;
+        }
 
         // Timer for dynamic update
-        new Timer(delay, e -> {
+        Timer timer = new Timer(delay, e -> {
             if (quietList.size() < steps) {
                 world.tick();
-                quietList.add(world.getQuietAgentCount());
-                jailedList.add(world.getJailedAgentCount());
-                activeList.add(world.getActiveAgentCount());
+                int activeCount = world.getActiveAgentCount();
+                int jailedCount = world.getJailedAgentCount();
+                int quietCount = world.getQuietAgentCount();
+                int copsCount = world.getCopsCount();
 
-                
+                // Add to lists
+                quietList.add(quietCount);
+                jailedList.add(jailedCount);
+                activeList.add(activeCount);
+
+                // Print to console
                 System.out.println("Time Step: " + (quietList.size() - 1));
                 world.printStatus();
+
+                // Write to CSV
+                try {
+                    String line = String.format("%d,%d,%d,%d,%d\n",
+                        quietList.size() - 1,
+                        activeCount,
+                        jailedCount,
+                        quietCount,
+                        copsCount
+                    );
+                    Files.write(Paths.get("simulation_results.csv"), 
+                        line.getBytes(), 
+                        java.nio.file.StandardOpenOption.APPEND);
+                } catch (IOException ex) {
+                    System.err.println("Error writing to CSV: " + ex.getMessage());
+                }
 
                 chartPanel.repaint();
             } else {
                 ((Timer) e.getSource()).stop();
                 System.out.println("Simulation finished.");
+                System.out.println("Results have been saved to simulation_results.csv");
             }
-        }).start();
+        });
+        timer.start();
     }
 }
 
