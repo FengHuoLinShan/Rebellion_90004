@@ -80,35 +80,47 @@ public class World {
 
     // 移动、更新状态、执法、坐牢减刑
     public void tick() {
-        // 移动代理和警察
+        // 按照 NetLogo 的顺序执行：先移动，再决定行为，最后执法
+        // 1. 移动所有代理和警察
         for (Agent agent : agents) {
-            if (!agent.isJailed()) {
-                agent.moveTo(getRandomEmptyLocationInVision(agent.getLocation()));
+            // 只有 MOVEMENT 为 true 或者代理不在监狱时才移动
+            if (!agent.isJailed() && MOVEMENT) {
+                agent.moveTo(getValidMoveLocation(agent.getLocation()));
             }
         }
+        // 警察总是移动
         for (Cop cop : cops) {
-            cop.moveTo(getRandomEmptyLocationInVision(cop.getLocation()));
+            cop.moveTo(getValidMoveLocation(cop.getLocation()));
         }
 
-        // 更新代理状态
+        // 2. 更新所有代理的状态
         for (Agent agent : agents) {
             if (!agent.isJailed()) {
-                agent.beingActive(threshold, government_legitimacy, this);
+                // 增加随机因素来打破稳定状态
+                double randomFactor = 1.0 + (random.nextDouble() * 0.2 - 0.1); // ±10% 随机波动
+                agent.beingActive(threshold, government_legitimacy * randomFactor, this);
+            }
+        }
+        
+        // 2.5 随机激活一些代理，模拟突发事件（约0.5%的几率）
+        for (Agent agent : agents) {
+            if (!agent.isJailed() && !agent.isActive() && random.nextDouble() < 0.005) {
+                agent.setActive(true);
             }
         }
 
-        // 警察执法
+        // 3. 警察执法
         for (Cop cop : cops) {
             Optional<Agent> suspect = getRandomActiveAgentInNeighborhood(cop.getLocation());
             if (suspect.isPresent()) {
                 Agent agent = suspect.get();
                 cop.moveTo(agent.getLocation());
                 agent.setActive(false);
-                agent.setJailTerm(random.nextInt(MAX_JAIL_TERM) + 1);
+                agent.setJailTerm(random.nextInt(MAX_JAIL_TERM)); // 使用与 NetLogo 相同的随机范围：0 到 MAX_JAIL_TERM-1
             }
         }
 
-        // 减少监禁时间
+        // 4. 减少监禁时间
         for (Agent agent : agents) {
             if (agent.isJailed()) {
                 agent.decre_Jail_term(agent.getJail_term());
@@ -116,32 +128,81 @@ public class World {
         }
     }
 
-    private Location getRandomEmptyLocationInVision(Location center) {
+    private Location getValidMoveLocation(Location center) {
         List<Location> validLocations = new ArrayList<>();
-        for (int i = -VISION; i <= VISION; i++) {
-            for (int j = -VISION; j <= VISION; j++) {
+        
+        // 创建所有可能的位置
+        List<Location> possibleLocations = new ArrayList<>();
+        for (int dx = -VISION; dx <= VISION; dx++) {
+            for (int dy = -VISION; dy <= VISION; dy++) {
                 Location newLoc = new Location(
-                    (center.getX() + i + grid.length) % grid.length,
-                    (center.getY() + j + grid[0].length) % grid[0].length
+                    (center.getX() + dx + grid.length) % grid.length,
+                    (center.getY() + dy + grid[0].length) % grid[0].length
                 );
-                if (isLocationEmpty(newLoc)) {
-                    validLocations.add(newLoc);
-                }
+                possibleLocations.add(newLoc);
             }
         }
-        return validLocations.isEmpty() ? center : validLocations.get(random.nextInt(validLocations.size()));
+        
+        // 随机打乱位置
+        java.util.Collections.shuffle(possibleLocations, random);
+        
+        // 找出有效的移动位置
+        for (Location loc : possibleLocations) {
+            if (isValidMoveLocation(loc)) {
+                validLocations.add(loc);
+            }
+        }
+        
+        return validLocations.isEmpty() ? center : validLocations.get(0); // 随机打乱后取第一个即可
+    }
+
+    private boolean isValidMoveLocation(Location loc) {
+        // 检查是否有警察
+        boolean hasCops = cops.stream().anyMatch(c -> c.getLocation().equals(loc));
+        if (hasCops) return false;
+
+        // 检查是否有非监禁代理
+        boolean hasNonJailedAgents = agents.stream()
+            .anyMatch(a -> a.getLocation().equals(loc) && !a.isJailed());
+        
+        // 允许代理在特定条件下聚集（概率性地允许移动到有非监禁代理的位置）
+        // 这会增加系统的波动性
+        if (hasNonJailedAgents && random.nextDouble() < 0.2) { // 20%的概率允许聚集
+            return true;
+        } else if (hasNonJailedAgents) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public double calculateArrestProbability(Location location) {
+        int copsCount = copsOnNeighborhood(location);
+        int activeAgentsCount = countActiveAgentsInNeighborhood(location);
+        
+        // 确保分母至少为 1
+        int a = 1 + activeAgentsCount;
+        
+        // 使用整数除法来模拟 NetLogo 的 floor 函数
+        int flooredRatio = copsCount / a;
+        
+        // 使用 NetLogo 的公式：1 - exp(-k * floor(c/a))
+        return 1 - Math.exp(-k * flooredRatio);
     }
 
     //计算neighbor上的cops数
     //todo: 定义neighbor计算方式
     public int copsOnNeighborhood(Location location){
-        int c = 0;
-        for (Cop cop : cops) {
-            if (isInVision(location, cop.getLocation())) {
-                c++;
-            }
-        }
-        return c;
+        return (int) cops.stream()
+            .filter(cop -> isInVision(location, cop.getLocation()))
+            .count();
+    }
+
+    //计算neighbor上的所有代理数（不包括监禁的）
+    public int countAgentsInNeighborhood(Location location) {
+        return (int) agents.stream()
+            .filter(a -> !a.isJailed() && isInVision(location, a.getLocation()))
+            .count();
     }
 
     //计算neighbor上的ActiveAgents数

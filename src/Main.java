@@ -40,7 +40,7 @@ public class Main {
         frame.setVisible(true);
 
         // Simulation parameters
-        int steps = 100; // 
+        int steps = 300; // 
         int delay = 0; // ms per step
 
         // Create CSV file and write header
