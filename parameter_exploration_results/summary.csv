@@ -1,0 +1,7 @@
+ExperimentID,Description,CopDensity,AgentDensity,Legitimacy,JailTerm,Vision,AvgActive,AvgJailed,AvgQuiet,MaxActive,MaxJailed,MaxQuiet,MinActive,MinJailed,MinQuiet
+1,Baseline,0.04,0.70,0.82,30,3,37.67,419.97,662.36,383,457,687,9,59,618
+2,High Cop Density,0.08,0.70,0.82,30,3,6.22,414.74,699.04,171,450,888,0,97,669
+3,Low Government Legitimacy,0.04,0.70,0.70,30,3,86.53,588.66,444.81,625,660,470,18,60,386
+4,High Agent Density,0.04,0.80,0.82,30,3,46.69,455.62,777.69,429,495,802,12,61,731
+5,Long Jail Term,0.04,0.70,0.82,40,3,35.33,419.93,664.74,380,458,688,3,61,627
+6,Large Vision,0.04,0.70,0.82,30,4,32.53,405.05,682.42,360,451,705,5,59,644

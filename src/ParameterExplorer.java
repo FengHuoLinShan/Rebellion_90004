@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ParameterExplorer {
-    // 预定义的参数组合
+    // Predefined parameter sets
     private static final class ParameterSet {
         final double copDensity;
         final double agentDensity;
@@ -28,33 +28,33 @@ public class ParameterExplorer {
         }
     }
 
-    // 定义几组有代表性的参数组合
+    // Define representative parameter sets
     private static final ParameterSet[] PARAMETER_SETS = {
-        // 基准参数组（原始参数）
-        new ParameterSet(0.04, 0.7, 0.82, 30, 3, "基准参数组"),
+        // Baseline parameter set (original parameters)
+        new ParameterSet(0.04, 0.7, 0.82, 30, 3, "Baseline"),
         
-        // 高警察密度组
-        new ParameterSet(0.08, 0.7, 0.82, 30, 3, "高警察密度组"),
+        // High cop density
+        new ParameterSet(0.08, 0.7, 0.82, 30, 3, "High Cop Density"),
         
-        // 低政府合法性组
-        new ParameterSet(0.04, 0.7, 0.7, 30, 3, "低政府合法性组"),
+        // Low government legitimacy
+        new ParameterSet(0.04, 0.7, 0.7, 30, 3, "Low Government Legitimacy"),
         
-        // 高代理密度组
-        new ParameterSet(0.04, 0.8, 0.82, 30, 3, "高代理密度组"),
+        // High agent density
+        new ParameterSet(0.04, 0.8, 0.82, 30, 3, "High Agent Density"),
         
-        // 长监禁时间组
-        new ParameterSet(0.04, 0.7, 0.82, 40, 3, "长监禁时间组"),
+        // Long jail term
+        new ParameterSet(0.04, 0.7, 0.82, 40, 3, "Long Jail Term"),
         
-        // 大视野范围组
-        new ParameterSet(0.04, 0.7, 0.82, 30, 4, "大视野范围组")
+        // Large vision
+        new ParameterSet(0.04, 0.7, 0.82, 30, 4, "Large Vision")
     };
 
     private static final int WORLD_SIZE = 40;
     private static final int SIMULATION_STEPS = 100;
-    private static final int REPETITIONS = 5; // 增加重复次数以提高可靠性
+    private static final int REPETITIONS = 1; // Set to 1 as requested
 
     public static void main(String[] args) {
-        // 创建结果目录
+        // Create results directory
         try {
             Files.createDirectories(Paths.get("parameter_exploration_results"));
         } catch (IOException e) {
@@ -62,11 +62,11 @@ public class ParameterExplorer {
             return;
         }
 
-        // 创建汇总报告文件
+        // Create summary report file
         try (PrintWriter summaryWriter = new PrintWriter(new FileWriter("parameter_exploration_results/summary.csv"))) {
             summaryWriter.println("ExperimentID,Description,CopDensity,AgentDensity,Legitimacy,JailTerm,Vision,AvgActive,AvgJailed,AvgQuiet,MaxActive,MaxJailed,MaxQuiet,MinActive,MinJailed,MinQuiet");
             
-            // 运行每组参数组合
+            // Run each parameter set
             for (int i = 0; i < PARAMETER_SETS.length; i++) {
                 ParameterSet params = PARAMETER_SETS[i];
                 runExperiment(i + 1, params, summaryWriter);
@@ -77,7 +77,7 @@ public class ParameterExplorer {
     }
 
     private static void runExperiment(int experimentId, ParameterSet params, PrintWriter summaryWriter) {
-        System.out.printf("运行实验 %d (%s): cop=%.2f, agent=%.2f, leg=%.2f, jail=%d, vision=%d%n",
+        System.out.printf("Running experiment %d (%s): cop=%.2f, agent=%.2f, leg=%.2f, jail=%d, vision=%d%n",
                 experimentId, params.description, params.copDensity, params.agentDensity, 
                 params.legitimacy, params.jailTerm, params.vision);
 
@@ -85,23 +85,23 @@ public class ParameterExplorer {
         List<Integer> totalJailed = new ArrayList<>();
         List<Integer> totalQuiet = new ArrayList<>();
 
-        // 重复运行实验
+        // Repeat experiment
         for (int rep = 0; rep < REPETITIONS; rep++) {
             World world = new World(WORLD_SIZE, WORLD_SIZE);
             world.setup(params.agentDensity, params.copDensity, 2.3, 0.1, params.legitimacy);
             
-            // 运行模拟
+            // Run simulation
             for (int step = 0; step < SIMULATION_STEPS; step++) {
                 world.tick();
                 
-                // 记录每一步的结果，而不仅仅是最后一步
+                // Record results for each step
                 totalActive.add(world.getActiveAgentCount());
                 totalJailed.add(world.getJailedAgentCount());
                 totalQuiet.add(world.getQuietAgentCount());
             }
         }
 
-        // 计算统计数据
+        // Calculate statistics
         double avgActive = totalActive.stream().mapToInt(Integer::intValue).average().orElse(0);
         double avgJailed = totalJailed.stream().mapToInt(Integer::intValue).average().orElse(0);
         double avgQuiet = totalQuiet.stream().mapToInt(Integer::intValue).average().orElse(0);
@@ -114,7 +114,7 @@ public class ParameterExplorer {
         int minJailed = totalJailed.stream().mapToInt(Integer::intValue).min().orElse(0);
         int minQuiet = totalQuiet.stream().mapToInt(Integer::intValue).min().orElse(0);
 
-        // 写入汇总报告
+        // Write to summary report
         summaryWriter.printf("%d,%s,%.2f,%.2f,%.2f,%d,%d,%.2f,%.2f,%.2f,%d,%d,%d,%d,%d,%d%n",
                 experimentId, params.description, params.copDensity, params.agentDensity,
                 params.legitimacy, params.jailTerm, params.vision,
