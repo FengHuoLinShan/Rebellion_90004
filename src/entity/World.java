@@ -96,16 +96,7 @@ public class World {
         // 2. 更新所有代理的状态
         for (Agent agent : agents) {
             if (!agent.isJailed()) {
-                // 增加随机因素来打破稳定状态
-                double randomFactor = 1.0 + (random.nextDouble() * 0.2 - 0.1); // ±10% 随机波动
-                agent.beingActive(threshold, government_legitimacy * randomFactor, this);
-            }
-        }
-        
-        // 2.5 随机激活一些代理，模拟突发事件（约0.5%的几率）
-        for (Agent agent : agents) {
-            if (!agent.isJailed() && !agent.isActive() && random.nextDouble() < 0.005) {
-                agent.setActive(true);
+                agent.beingActive(threshold, government_legitimacy, this);
             }
         }
 
@@ -164,14 +155,7 @@ public class World {
         // 检查是否有非监禁代理
         boolean hasNonJailedAgents = agents.stream()
             .anyMatch(a -> a.getLocation().equals(loc) && !a.isJailed());
-        
-        // 允许代理在特定条件下聚集（概率性地允许移动到有非监禁代理的位置）
-        // 这会增加系统的波动性
-        if (hasNonJailedAgents && random.nextDouble() < 0.2) { // 20%的概率允许聚集
-            return true;
-        } else if (hasNonJailedAgents) {
-            return false;
-        }
+        if (hasNonJailedAgents) return false;
 
         return true;
     }
@@ -179,15 +163,10 @@ public class World {
     public double calculateArrestProbability(Location location) {
         int copsCount = copsOnNeighborhood(location);
         int activeAgentsCount = countActiveAgentsInNeighborhood(location);
-        
-        // 确保分母至少为 1
-        int a = 1 + activeAgentsCount;
-        
-        // 使用整数除法来模拟 NetLogo 的 floor 函数
-        int flooredRatio = copsCount / a;
+        if (activeAgentsCount == 0) return 0;
         
         // 使用 NetLogo 的公式：1 - exp(-k * floor(c/a))
-        return 1 - Math.exp(-k * flooredRatio);
+        return 1 - Math.exp(-k * Math.floor((double) copsCount / (activeAgentsCount + 1)));
     }
 
     //计算neighbor上的cops数
@@ -195,13 +174,6 @@ public class World {
     public int copsOnNeighborhood(Location location){
         return (int) cops.stream()
             .filter(cop -> isInVision(location, cop.getLocation()))
-            .count();
-    }
-
-    //计算neighbor上的所有代理数（不包括监禁的）
-    public int countAgentsInNeighborhood(Location location) {
-        return (int) agents.stream()
-            .filter(a -> !a.isJailed() && isInVision(location, a.getLocation()))
             .count();
     }
 

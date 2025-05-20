@@ -26,23 +26,14 @@ public class Agent extends Turtle {
 
     /**
      * 更新（判断）active状态
-     * 使用与 NetLogo 完全相同的逻辑，但增加了邻居代理的影响
+     * 使用与 NetLogo 完全相同的逻辑：
+     * active? = (grievance - risk-aversion * estimated-arrest-probability > threshold)
      */
     public void beingActive(double threshold, double government_legitimacy, World w) {
         double grievance = getGrievance(government_legitimacy);
         double arrestProb = w.calculateArrestProbability(location);
         double netRisk = risk_aversion * arrestProb;
-        
-        // 计算邻居中活跃代理的比例，这会影响当前代理的决策
-        int totalNeighbors = w.countAgentsInNeighborhood(location);
-        int activeNeighbors = w.countActiveAgentsInNeighborhood(location);
-        double activeRatio = totalNeighbors > 0 ? (double) activeNeighbors / totalNeighbors : 0;
-        
-        // 邻居的活跃状态会增强或减弱代理的不满情绪
-        double neighborEffect = 0.2 * (activeRatio - 0.5); // -0.1 to 0.1 范围
-        
-        // 最终决策，考虑邻居影响
-        active = (grievance + neighborEffect - netRisk > threshold);
+        active = (grievance - netRisk > threshold);
     }
 
     private double getGrievance(double government_legitimacy) {
