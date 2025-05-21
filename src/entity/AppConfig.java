@@ -17,7 +17,7 @@ public final class AppConfig {
     public static final double THRESHOLD = 0.1;
 
     //netlogo slider variables
-    public static final int VISION = 3;
+    public static final int VISION = 7;
     public static final int MAX_JAIL_TERM = 30;
     public static final double GOVERNMENT_LEGITIMACY = 0.82;
     public static final double INITIAL_COP_DENSITY = 0.04;

@@ -120,31 +120,29 @@ public class World {
     }
 
     private Location getValidMoveLocation(Location center) {
+        // 创建基于圆形半径的邻居列表
         List<Location> validLocations = new ArrayList<>();
         
-        // 创建所有可能的位置
-        List<Location> possibleLocations = new ArrayList<>();
-        for (int dx = -VISION; dx <= VISION; dx++) {
-            for (int dy = -VISION; dy <= VISION; dy++) {
-                Location newLoc = new Location(
-                    (center.getX() + dx + grid.length) % grid.length,
-                    (center.getY() + dy + grid[0].length) % grid[0].length
-                );
-                possibleLocations.add(newLoc);
+        for (int i = 0; i < grid.length; i++) {
+            for (int j = 0; j < grid[0].length; j++) {
+                Location loc = new Location(i, j);
+                // 检查是否在视野内
+                if (isInVision(center, loc)) {
+                    // 检查是否是有效移动位置
+                    if (isValidMoveLocation(loc)) {
+                        validLocations.add(loc);
+                    }
+                }
             }
         }
         
-        // 随机打乱位置
-        java.util.Collections.shuffle(possibleLocations, random);
-        
-        // 找出有效的移动位置
-        for (Location loc : possibleLocations) {
-            if (isValidMoveLocation(loc)) {
-                validLocations.add(loc);
-            }
+        // 如果没有有效位置，保持原位置
+        if (validLocations.isEmpty()) {
+            return center;
         }
         
-        return validLocations.isEmpty() ? center : validLocations.get(0); // 随机打乱后取第一个即可
+        // 随机选择一个有效位置
+        return validLocations.get(random.nextInt(validLocations.size()));
     }
 
     private boolean isValidMoveLocation(Location loc) {
@@ -163,24 +161,23 @@ public class World {
     public double calculateArrestProbability(Location location) {
         int copsCount = copsOnNeighborhood(location);
         int activeAgentsCount = countActiveAgentsInNeighborhood(location);
-        if (activeAgentsCount == 0) return 0;
+        // if (activeAgentsCount == 0) return 0;
         
         // 使用 NetLogo 的公式：1 - exp(-k * floor(c/a))
         return 1 - Math.exp(-k * Math.floor((double) copsCount / (activeAgentsCount + 1)));
     }
 
     //计算neighbor上的cops数
-    //todo: 定义neighbor计算方式
     public int copsOnNeighborhood(Location location){
         return (int) cops.stream()
             .filter(cop -> isInVision(location, cop.getLocation()))
             .count();
     }
 
-    //计算neighbor上的ActiveAgents数
+    //计算neighbor上的ActiveAgents数，不包括自己
     public int countActiveAgentsInNeighborhood(Location t) {
         return (int) agents.stream()
-            .filter(a -> !a.isJailed() && a.isActive() && isInVision(t, a.getLocation()))
+            .filter(a -> !a.isJailed() && a.isActive() && isInVision(t, a.getLocation()) && !a.getLocation().equals(t))
             .count();
     }
 
@@ -195,9 +192,13 @@ public class World {
     private boolean isInVision(Location loc1, Location loc2) {
         int dx = Math.abs(loc1.getX() - loc2.getX());
         int dy = Math.abs(loc1.getY() - loc2.getY());
+        
+        // 处理环形世界的边界
         dx = Math.min(dx, grid.length - dx);
         dy = Math.min(dy, grid[0].length - dy);
-        return dx <= VISION && dy <= VISION;
+        
+        // 使用欧几里得距离，模拟 NetLogo 的 in-radius
+        return Math.sqrt(dx * dx + dy * dy) <= VISION;
     }
 
     // Add statistics methods
