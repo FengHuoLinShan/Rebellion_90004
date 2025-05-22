@@ -7,6 +7,10 @@ public class Agent extends Turtle {
     double perceived_hardship = 0.5;   //H, also ranging from 0-1 (inclusive)
     private boolean active = false;
     private int jail_term = 0;
+    private boolean isLeader = false;  // 新增：是否为leader
+    private static final double LEADER_RISK_AVERSION_MULTIPLIER = 0.5;  // leader的风险厌恶系数乘数
+    private static final double LEADER_THRESHOLD_MULTIPLIER = 0.5;  // leader的阈值乘数
+    private static final int LEADER_MAX_JAIL_TERM = 15;  // leader的最大监禁时间
 
     //创建时每个agent有不同的参数（color是固定的）
     public Agent(Location location, double risk_aversion, double perceived_hardship) {
@@ -24,6 +28,18 @@ public class Agent extends Turtle {
         return active;
     }
 
+    public boolean isLeader() {
+        return isLeader;
+    }
+
+    public void setLeader(boolean leader) {
+        isLeader = leader;
+        if (leader) {
+            // 当成为leader时，降低风险厌恶系数
+            this.risk_aversion *= LEADER_RISK_AVERSION_MULTIPLIER;
+        }
+    }
+
     /**
      * 更新（判断）active状态
      * 使用与 NetLogo 完全相同的逻辑：
@@ -33,7 +49,16 @@ public class Agent extends Turtle {
         double grievance = getGrievance(government_legitimacy);
         double arrestProb = w.calculateArrestProbability(location);
         double netRisk = risk_aversion * arrestProb;
-        active = (grievance - netRisk > threshold);
+        
+        // 如果是leader，使用更低的阈值
+        double effectiveThreshold = isLeader ? threshold * LEADER_THRESHOLD_MULTIPLIER : threshold;
+        
+        // 检查是否在leader周围，如果是则获得阈值折扣
+        if (!isLeader && w.isNearLeader(location)) {
+            effectiveThreshold *= 0.8;  // 在leader周围获得20%的阈值折扣
+        }
+        
+        active = (grievance - netRisk > effectiveThreshold);
     }
 
     private double getGrievance(double government_legitimacy) {
@@ -56,12 +81,15 @@ public class Agent extends Turtle {
     }
 
     /**
-     * 被捕时随机决定服刑时间
-     * 注意：在 NetLogo 中，jail-term 为 0 表示不在监狱中
+     * random jail term
      */
     public void setJailTerm(int jail_term) {
-        // 确保监禁时间至少为 1，因为 0 表示不在监狱
-        this.jail_term = Math.max(1, jail_term);
+        // 如果是leader，使用更短的监禁时间
+        if (isLeader) {
+            this.jail_term = Math.max(1, Math.min(jail_term, LEADER_MAX_JAIL_TERM));
+        } else {
+            this.jail_term = Math.max(1, jail_term);
+        }
     }
 
     public void setActive(boolean b) {

@@ -15,6 +15,7 @@ public class World {
     private double k;
     private double threshold;
     private double government_legitimacy;
+    private static final double LEADER_PERCENTAGE = 0.05;  // 5%的agents成为leader
 
     //参数写到main
 
@@ -58,6 +59,14 @@ public class World {
                 double perceivedHardship = random.nextDouble();
                 agents.add(new Agent(randomLoc, riskAversion, perceivedHardship));
             }
+        }
+
+        // 随机选择5%的agents作为leader
+        int numLeaders = (int) (agents.size() * LEADER_PERCENTAGE);
+        List<Agent> shuffledAgents = new ArrayList<>(agents);
+        java.util.Collections.shuffle(shuffledAgents, random);
+        for (int i = 0; i < numLeaders; i++) {
+            shuffledAgents.get(i).setLeader(true);
         }
     }
 
@@ -231,6 +240,15 @@ public class World {
 
     public int getCopsCount() {
         return cops.size();
+    }
+
+    /**
+     * 检查给定位置是否在leader的视野范围内
+     */
+    public boolean isNearLeader(Location location) {
+        return agents.stream()
+            .filter(Agent::isLeader)
+            .anyMatch(leader -> isInVision(location, leader.getLocation()));
     }
 
     // ...
