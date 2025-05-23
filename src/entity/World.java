@@ -182,9 +182,10 @@ public class World {
     }
 
     //寻找vision内叛乱分子，没有则返回null
+    // extension: 如果location可以躲藏（hideable = true），则该location的agent不会被观测到
     public Optional<Agent> getRandomActiveAgentInNeighborhood(Location location) {
         List<Agent> activeAgents = agents.stream()
-            .filter(a -> !a.isJailed() && a.isActive() && isInVision(location, a.getLocation()))
+            .filter(a -> !a.isJailed() && a.isActive() && isInVision(location, a.getLocation()) && !a.getLocation().getHideable())
             .toList();
         return activeAgents.isEmpty() ? Optional.empty() : Optional.of(activeAgents.get(random.nextInt(activeAgents.size())));
     }

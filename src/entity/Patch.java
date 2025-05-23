@@ -4,6 +4,7 @@ import java.util.List;
 
 public class Patch {
     private Location location;
+    
     Turtle turtle;
 
     public Patch(Location location) {
@@ -21,6 +22,8 @@ public class Patch {
     public void removeTurtle(){
         this.turtle = null;
     }
+
+    
 
     /**
      * 判断此地块是否为空（或者仅关押）
