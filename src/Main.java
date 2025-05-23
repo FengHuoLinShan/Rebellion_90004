@@ -40,7 +40,7 @@ public class Main {
         frame.setVisible(true);
 
         // Simulation parameters
-        int steps = 300; // 
+        int steps = 200; // 
         int delay = 0; // ms per step
 
         // Create CSV file and write header
@@ -90,7 +90,42 @@ public class Main {
             } else {
                 ((Timer) e.getSource()).stop();
                 System.out.println("Simulation finished.");
-                System.out.println("Results have been saved to simulation_results.csv");
+                
+                
+                try {
+                    
+                    int maxActive = activeList.stream().mapToInt(Integer::intValue).max().orElse(0);
+                    int minActive = activeList.stream().mapToInt(Integer::intValue).min().orElse(0);
+                    double avgActive = activeList.stream().mapToInt(Integer::intValue).average().orElse(0);
+                    
+                    int maxJailed = jailedList.stream().mapToInt(Integer::intValue).max().orElse(0);
+                    int minJailed = jailedList.stream().mapToInt(Integer::intValue).min().orElse(0);
+                    double avgJailed = jailedList.stream().mapToInt(Integer::intValue).average().orElse(0);
+                    
+                    int maxQuiet = quietList.stream().mapToInt(Integer::intValue).max().orElse(0);
+                    int minQuiet = quietList.stream().mapToInt(Integer::intValue).min().orElse(0);
+                    double avgQuiet = quietList.stream().mapToInt(Integer::intValue).average().orElse(0);
+                    
+                   
+                    String statsHeader = "\nStatistics\n";
+                    String statsContent = String.format(
+                        "Category,Max,Min,Average\n" +
+                        "Active,%d,%d,%.2f\n" +
+                        "Jailed,%d,%d,%.2f\n" +
+                        "Quiet,%d,%d,%.2f\n",
+                        maxActive, minActive, avgActive,
+                        maxJailed, minJailed, avgJailed,
+                        maxQuiet, minQuiet, avgQuiet
+                    );
+                    
+                    Files.write(Paths.get("simulation_results.csv"), 
+                        (statsHeader + statsContent).getBytes(), 
+                        java.nio.file.StandardOpenOption.APPEND);
+                    
+                    System.out.println("Statistics have been added to simulation_results.csv");
+                } catch (IOException ex) {
+                    System.err.println("Error writing statistics to CSV: " + ex.getMessage());
+                }
             }
         });
         timer.start();
