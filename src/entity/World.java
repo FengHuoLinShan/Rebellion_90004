@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.Random;
 import static entity.AppConfig.*;
 
-//初始化各地块和各turtle
+//Initialize grid and turtles
 public class World {
     private Patch[][] grid;
     private List<Agent> agents;
@@ -16,23 +16,23 @@ public class World {
     private double threshold;
     private double government_legitimacy;
 
-    //参数写到main
+    //Parameters are written in main
 
-    // 初始化 grid、agents、cops，构建邻域
+    // Initialize grid, agents, cops, and build neighborhoods
     public World(int width, int height) {
         this.grid = new Patch[width][height];
         this.agents = new ArrayList<>();
         this.cops = new ArrayList<>();
         this.random = new Random();
         
-        // 初始化网格
+        // Initialize grid
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
                 grid[i][j] = new Patch(new Location(i, j));
             }
         }
     }
-    // 创建 agent/cop，随机放置到空地块
+    // Create agents/cops and place them randomly in empty patches
     public void setup(double agentDensity, double copDensity, double k, double threshold, double government_legitimacy) {
         this.k = k;
         this.threshold = threshold;
@@ -42,7 +42,7 @@ public class World {
         int numAgents = (int) (agentDensity * totalPatches);
         int numCops = (int) (copDensity * totalPatches);
 
-        // 创建警察
+        // Create cops
         for (int i = 0; i < numCops; i++) {
             Location randomLoc = getRandomEmptyLocation();
             if (randomLoc != null) {
@@ -50,7 +50,7 @@ public class World {
             }
         }
 
-        // 创建代理
+        // Create agents
         for (int i = 0; i < numAgents; i++) {
             Location randomLoc = getRandomEmptyLocation();
             if (randomLoc != null) {
@@ -78,40 +78,40 @@ public class World {
                !cops.stream().anyMatch(c -> c.getLocation().equals(loc));
     }
 
-    // 移动、更新状态、执法、坐牢减刑
+    // Move, update status, enforce law, reduce jail terms
     public void tick() {
-        // 按照 NetLogo 的顺序执行：先移动，再决定行为，最后执法
-        // 1. 移动所有代理和警察
+        // Follow NetLogo's order: move first, then determine behavior, finally enforce law
+        // 1. Move all agents and cops
         for (Agent agent : agents) {
-            // 只有 MOVEMENT 为 true 或者代理不在监狱时才移动
+            // Only move if MOVEMENT is true or agent is not in jail
             if (!agent.isJailed() && MOVEMENT) {
                 agent.moveTo(getValidMoveLocation(agent.getLocation()));
             }
         }
-        // 警察总是移动
+        // Cops always move
         for (Cop cop : cops) {
             cop.moveTo(getValidMoveLocation(cop.getLocation()));
         }
 
-        // 2. 更新所有代理的状态
+        // 2. Update all agents' status
         for (Agent agent : agents) {
             if (!agent.isJailed()) {
                 agent.beingActive(threshold, government_legitimacy, this);
             }
         }
 
-        // 3. 警察执法
+        // 3. Cops enforce law
         for (Cop cop : cops) {
             Optional<Agent> suspect = getRandomActiveAgentInNeighborhood(cop.getLocation());
             if (suspect.isPresent()) {
                 Agent agent = suspect.get();
                 cop.moveTo(agent.getLocation());
                 agent.setActive(false);
-                agent.setJailTerm(random.nextInt(MAX_JAIL_TERM)); // 使用与 NetLogo 相同的随机范围：0 到 MAX_JAIL_TERM-1
+                agent.setJailTerm(random.nextInt(MAX_JAIL_TERM)); // Use same random range as NetLogo: 0 to MAX_JAIL_TERM-1
             }
         }
 
-        // 4. 减少监禁时间
+        // 4. Reduce jail terms
         for (Agent agent : agents) {
             if (agent.isJailed()) {
                 agent.decre_Jail_term(agent.getJail_term());
@@ -120,15 +120,15 @@ public class World {
     }
 
     private Location getValidMoveLocation(Location center) {
-        // 创建基于圆形半径的邻居列表
+        // Create list of neighbors based on circular radius
         List<Location> validLocations = new ArrayList<>();
         
         for (int i = 0; i < grid.length; i++) {
             for (int j = 0; j < grid[0].length; j++) {
                 Location loc = new Location(i, j);
-                // 检查是否在视野内
+                // Check if within vision
                 if (isInVision(center, loc)) {
-                    // 检查是否是有效移动位置
+                    // Check if valid move location
                     if (isValidMoveLocation(loc)) {
                         validLocations.add(loc);
                     }
@@ -136,21 +136,21 @@ public class World {
             }
         }
         
-        // 如果没有有效位置，保持原位置
+        // If no valid locations, stay in place
         if (validLocations.isEmpty()) {
             return center;
         }
         
-        // 随机选择一个有效位置
+        // Randomly select a valid location
         return validLocations.get(random.nextInt(validLocations.size()));
     }
 
     private boolean isValidMoveLocation(Location loc) {
-        // 检查是否有警察
+        // Check if there are cops
         boolean hasCops = cops.stream().anyMatch(c -> c.getLocation().equals(loc));
         if (hasCops) return false;
 
-        // 检查是否有非监禁代理
+        // Check if there are non-jailed agents
         boolean hasNonJailedAgents = agents.stream()
             .anyMatch(a -> a.getLocation().equals(loc) && !a.isJailed());
         if (hasNonJailedAgents) return false;
@@ -163,25 +163,25 @@ public class World {
         int activeAgentsCount = countActiveAgentsInNeighborhood(location);
         // if (activeAgentsCount == 0) return 0;
         
-        // 使用 NetLogo 的公式：1 - exp(-k * floor(c/a))
+        // Use NetLogo's formula: 1 - exp(-k * floor(c/a))
         return 1 - Math.exp(-k * Math.floor((double) copsCount / (activeAgentsCount + 1)));
     }
 
-    //计算neighbor上的cops数
+    //Count cops in neighborhood
     public int copsOnNeighborhood(Location location){
         return (int) cops.stream()
             .filter(cop -> isInVision(location, cop.getLocation()))
             .count();
     }
 
-    //计算neighbor上的ActiveAgents数，不包括自己
+    //Count active agents in neighborhood, excluding self
     public int countActiveAgentsInNeighborhood(Location t) {
         return (int) agents.stream()
             .filter(a -> !a.isJailed() && a.isActive() && isInVision(t, a.getLocation()) && !a.getLocation().equals(t))
             .count();
     }
 
-    //寻找vision内叛乱分子，没有则返回null
+    //Find rebels within vision, return null if none
     public Optional<Agent> getRandomActiveAgentInNeighborhood(Location location) {
         List<Agent> activeAgents = agents.stream()
             .filter(a -> !a.isJailed() && a.isActive() && isInVision(location, a.getLocation()))
@@ -193,11 +193,11 @@ public class World {
         int dx = Math.abs(loc1.getX() - loc2.getX());
         int dy = Math.abs(loc1.getY() - loc2.getY());
         
-        // 处理环形世界的边界
+        // Handle toroidal world boundaries
         dx = Math.min(dx, grid.length - dx);
         dy = Math.min(dy, grid[0].length - dy);
         
-        // 使用欧几里得距离，模拟 NetLogo 的 in-radius
+        // Use Euclidean distance to simulate NetLogo's in-radius
         return Math.sqrt(dx * dx + dy * dy) <= VISION;
     }
 

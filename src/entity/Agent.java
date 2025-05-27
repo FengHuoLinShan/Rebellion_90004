@@ -8,7 +8,7 @@ public class Agent extends Turtle {
     private boolean active = false;
     private int jail_term = 0;
 
-    //创建时每个agent有不同的参数（color是固定的）
+    //Each agent has different parameters when created (color is fixed)
     public Agent(Location location, double risk_aversion, double perceived_hardship) {
         this.color = AGENT_COLOR;
         this.location = location;
@@ -25,8 +25,8 @@ public class Agent extends Turtle {
     }
 
     /**
-     * 更新（判断）active状态
-     * 使用与 NetLogo 完全相同的逻辑：
+     * Update (determine) active status
+     * Using the same logic as NetLogo:
      * active? = (grievance - risk-aversion * estimated-arrest-probability > threshold)
      */
     public void beingActive(double threshold, double government_legitimacy, World w) {
@@ -49,18 +49,18 @@ public class Agent extends Turtle {
     }
 
     /**
-     * 服刑时间-1
+     * Decrease jail term by 1
      */
     public void decre_Jail_term(int jail_term) {
         this.jail_term--;
     }
 
     /**
-     * 被捕时随机决定服刑时间
-     * 注意：在 NetLogo 中，jail-term 为 0 表示不在监狱中
+     * Set random jail term when arrested
+     * Note: In NetLogo, jail-term of 0 means not in jail
      */
     public void setJailTerm(int jail_term) {
-        // 确保监禁时间至少为 1，因为 0 表示不在监狱
+        // Ensure jail term is at least 1, as 0 means not in jail
         this.jail_term = Math.max(1, jail_term);
     }
 
