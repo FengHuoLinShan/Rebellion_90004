@@ -7,12 +7,12 @@ public class Agent extends Turtle {
     double perceived_hardship = 0.5;   //H, also ranging from 0-1 (inclusive)
     private boolean active = false;
     private int jail_term = 0;
-    private boolean isLeader = false;  // 新增：是否为leader
-    private static final double LEADER_RISK_AVERSION_MULTIPLIER = 0.5;  // leader的风险厌恶系数乘数
-    private static final double LEADER_THRESHOLD_MULTIPLIER = 0.5;  // leader的阈值乘数
-    private static final int LEADER_MAX_JAIL_TERM = 15;  // leader的最大监禁时间
+    private boolean isLeader = false;  // New: whether the agent is a leader
+    private static final double LEADER_RISK_AVERSION_MULTIPLIER = 0.5;  // Risk aversion multiplier for leaders
+    private static final double LEADER_THRESHOLD_MULTIPLIER = 0.5;  // Threshold multiplier for leaders
+    private static final int LEADER_MAX_JAIL_TERM = 15;  // Maximum jail term for leaders
 
-    //创建时每个agent有不同的参数（color是固定的）
+    // Each agent has different parameters when created (color is fixed)
     public Agent(Location location, double risk_aversion, double perceived_hardship) {
         this.color = AGENT_COLOR;
         this.location = location;
@@ -35,14 +35,14 @@ public class Agent extends Turtle {
     public void setLeader(boolean leader) {
         isLeader = leader;
         if (leader) {
-            // 当成为leader时，降低风险厌恶系数
+            // When becoming a leader, reduce risk aversion
             this.risk_aversion *= LEADER_RISK_AVERSION_MULTIPLIER;
         }
     }
 
     /**
-     * 更新（判断）active状态
-     * 使用与 NetLogo 完全相同的逻辑：
+     * Update (determine) active status
+     * Using the same logic as NetLogo:
      * active? = (grievance - risk-aversion * estimated-arrest-probability > threshold)
      */
     public void beingActive(double threshold, double government_legitimacy, World w) {
@@ -50,12 +50,12 @@ public class Agent extends Turtle {
         double arrestProb = w.calculateArrestProbability(location);
         double netRisk = risk_aversion * arrestProb;
         
-        // 如果是leader，使用更低的阈值
+        // If it's a leader, use a lower threshold
         double effectiveThreshold = isLeader ? threshold * LEADER_THRESHOLD_MULTIPLIER : threshold;
         
-        // 检查是否在leader周围，如果是则获得阈值折扣
+        // Check if near a leader, if so get a threshold discount
         if (!isLeader && w.isNearLeader(location)) {
-            effectiveThreshold *= 0.8;  // 在leader周围获得20%的阈值折扣
+            effectiveThreshold *= 0.8;  // Get 20% threshold discount when near a leader
         }
         
         active = (grievance - netRisk > effectiveThreshold);
@@ -74,17 +74,17 @@ public class Agent extends Turtle {
     }
 
     /**
-     * 服刑时间-1
+     * Decrease jail term by 1
      */
     public void decre_Jail_term(int jail_term) {
         this.jail_term--;
     }
 
     /**
-     * random jail term
+     * Set random jail term
      */
     public void setJailTerm(int jail_term) {
-        // 如果是leader，使用更短的监禁时间
+        // If it's a leader, use shorter jail term
         if (isLeader) {
             this.jail_term = Math.max(1, Math.min(jail_term, LEADER_MAX_JAIL_TERM));
         } else {
