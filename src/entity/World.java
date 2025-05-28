@@ -15,6 +15,7 @@ public class World {
     private double k;
     private double threshold;
     private double government_legitimacy;
+    private boolean useLocalLegitimacy;  // Flag to control local legitimacy mechanism
 
     //Parameters are written in main
 
@@ -24,6 +25,7 @@ public class World {
         this.agents = new ArrayList<>();
         this.cops = new ArrayList<>();
         this.random = new Random();
+        this.useLocalLegitimacy = false;  // Default to false
         
         // Initialize grid
         for (int i = 0; i < width; i++) {
@@ -33,10 +35,11 @@ public class World {
         }
     }
     // Create agents/cops and place them randomly in empty patches
-    public void setup(double agentDensity, double copDensity, double k, double threshold, double government_legitimacy) {
+    public void setup(double agentDensity, double copDensity, double k, double threshold, double government_legitimacy, boolean useLocalLegitimacy) {
         this.k = k;
         this.threshold = threshold;
         this.government_legitimacy = government_legitimacy;
+        this.useLocalLegitimacy = useLocalLegitimacy;
 
         int totalPatches = grid.length * grid[0].length;
         int numAgents = (int) (agentDensity * totalPatches);
@@ -91,6 +94,24 @@ public class World {
         // Cops always move
         for (Cop cop : cops) {
             cop.moveTo(getValidMoveLocation(cop.getLocation()));
+        }
+
+        // Update local legitimacy and cop times for all patches if using local legitimacy
+        if (useLocalLegitimacy) {
+            for (int i = 0; i < grid.length; i++) {
+                for (int j = 0; j < grid[0].length; j++) {
+                    Patch patch = grid[i][j];
+                    // Check if there are cops in the neighborhood
+                    int copCount = copsOnNeighborhood(patch.getLocation());
+                    if (copCount > 0) {
+                        patch.incrementCopTimes();
+                    } else {
+                        patch.decrementCopTimes();
+                    }
+                    // Update local legitimacy based on government legitimacy
+                    patch.updateLocalLegitimacy(government_legitimacy);
+                }
+            }
         }
 
         // 2. Update all agents' status
@@ -231,6 +252,10 @@ public class World {
 
     public int getCopsCount() {
         return cops.size();
+    }
+
+    public Patch getPatchAt(Location location) {
+        return grid[location.getX()][location.getY()];
     }
 
     // ...

@@ -30,14 +30,16 @@ public class Agent extends Turtle {
      * active? = (grievance - risk-aversion * estimated-arrest-probability > threshold)
      */
     public void beingActive(double threshold, double government_legitimacy, World w) {
-        double grievance = getGrievance(government_legitimacy);
+        double grievance = getGrievance(w);
         double arrestProb = w.calculateArrestProbability(location);
         double netRisk = risk_aversion * arrestProb;
         active = (grievance - netRisk > threshold);
     }
 
-    private double getGrievance(double government_legitimacy) {
-        return perceived_hardship * (1 - government_legitimacy);
+    private double getGrievance(World w) {
+        // Get the local legitimacy from the patch where the agent is located
+        double localLegitimacy = w.getPatchAt(location).getLocalLegitimacy();
+        return perceived_hardship * (1 - localLegitimacy);
     }
 
     public void moveTo(Location randomLoc){

@@ -1,4 +1,5 @@
 import entity.World;
+import entity.Patch;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -9,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.stream.Collectors;
+import javax.swing.*;
+import java.awt.*;
 
 public class ParameterExplorer {
     // Predefined parameter sets
@@ -19,15 +22,22 @@ public class ParameterExplorer {
         final int jailTerm;
         final int vision;
         final String description;
+        final double maxLocalRelated;  // New parameter for cop-times influence
 
         ParameterSet(double copDensity, double agentDensity, double legitimacy, 
                     int jailTerm, int vision, String description) {
+            this(copDensity, agentDensity, legitimacy, jailTerm, vision, description, 10.0);
+        }
+
+        ParameterSet(double copDensity, double agentDensity, double legitimacy, 
+                    int jailTerm, int vision, String description, double maxLocalRelated) {
             this.copDensity = copDensity;
             this.agentDensity = agentDensity;
             this.legitimacy = legitimacy;
             this.jailTerm = jailTerm;
             this.vision = vision;
             this.description = description;
+            this.maxLocalRelated = maxLocalRelated;
         }
     }
 
@@ -62,7 +72,11 @@ public class ParameterExplorer {
         
         // Extreme scenarios
         new ParameterSet(0.09, 0.9, 0.6, 50, 9, "Extreme Unrest"),
-        new ParameterSet(0.09, 0.5, 0.95, 50, 5, "Extreme Control")
+        new ParameterSet(0.09, 0.5, 0.95, 50, 5, "Extreme Control"),
+
+        // New parameter sets for local legitimacy testing
+        new ParameterSet(0.04, 0.7, 0.82, 30, 7, "Local Legitimacy - High Cop Activity", 5.0),  // Stronger cop-times influence
+        new ParameterSet(0.04, 0.7, 0.82, 30, 7, "Local Legitimacy - Low Cop Activity", 15.0) // Weaker cop-times influence
     };
 
     private static final int WORLD_SIZE = 40;
@@ -81,69 +95,115 @@ public class ParameterExplorer {
     }
 
     public static void main(String[] args) {
-        try {
-            Files.createDirectories(Paths.get("parameter_exploration_results"));
-        } catch (IOException e) {
-            System.err.println("Error creating results directory: " + e.getMessage());
-            return;
+        // Create Swing frame for parameter selection
+        JFrame frame = new JFrame("Parameter Explorer");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        JPanel panel = new JPanel(new GridLayout(0, 1));
+        JLabel label = new JLabel("Select parameter sets to run:");
+        panel.add(label);
+
+        // Create checkboxes for each parameter set
+        JCheckBox[] checkboxes = new JCheckBox[PARAMETER_SETS.length];
+        for (int i = 0; i < PARAMETER_SETS.length; i++) {
+            checkboxes[i] = new JCheckBox(PARAMETER_SETS[i].description);
+            panel.add(checkboxes[i]);
         }
 
-        // Create summary report file with extended statistics
-        try (PrintWriter summaryWriter = new PrintWriter(new FileWriter("parameter_exploration_results/summary.csv"))) {
-            summaryWriter.println("ExperimentID,Description,CopDensity,AgentDensity,Legitimacy,JailTerm,Vision," +
-                    "AvgActive,AvgJailed,AvgQuiet,MaxActive,MaxJailed,MaxQuiet,MinActive,MinJailed,MinQuiet," +
-                    "OutbreakCount,RebellionFrequency,AvgRebellionSize,MaxRebellionSize,TotalRebellionSteps," +
-                    "StabilityIndex,RecoveryTime");
+        // Add run button
+        JButton runButton = new JButton("Run Selected");
+        panel.add(runButton);
 
-            // Store data for parameter interaction analysis
-            List<Double> copDensities = new ArrayList<>();
-            List<Double> legitimacies = new ArrayList<>();
-            List<Double> stabilityIndices = new ArrayList<>();
-
-            // Run each parameter set
-            for (int i = 0; i < PARAMETER_SETS.length; i++) {
-                ParameterSet params = PARAMETER_SETS[i];
-                RebellionStats stats = runExperiment(i + 1, params, summaryWriter);
-                
-                // Generate charts for this experiment
-                ChartGenerator.generateTimeSeriesChart(
-                    stats.activeCounts,
-                    stats.jailedCounts,
-                    stats.quietCounts,
-                    String.valueOf(i + 1)
-                );
-                
-                ChartGenerator.generateRebellionSizeChart(
-                    stats.rebellionSizes,
-                    String.valueOf(i + 1)
-                );
-
-                // Store data for parameter interaction analysis
-                if (!copDensities.contains(params.copDensity)) {
-                    copDensities.add(params.copDensity);
+        runButton.addActionListener(e -> {
+            // Get selected parameter sets
+            List<ParameterSet> selectedSets = new ArrayList<>();
+            for (int i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i].isSelected()) {
+                    selectedSets.add(PARAMETER_SETS[i]);
                 }
-                if (!legitimacies.contains(params.legitimacy)) {
-                    legitimacies.add(params.legitimacy);
-                }
-                stabilityIndices.add(calculateStabilityIndex(stats.activeCounts));
             }
 
-            // Generate parameter interaction chart
-            ChartGenerator.generateParameterInteractionChart(
-                copDensities.stream().sorted().collect(Collectors.toList()),
-                legitimacies.stream().sorted().collect(Collectors.toList()),
-                stabilityIndices
-            );
+            if (selectedSets.isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "Please select at least one parameter set.");
+                return;
+            }
 
-        } catch (IOException e) {
-            System.err.println("Error writing summary file: " + e.getMessage());
-        }
+            // Create results directory with timestamp
+            String timestamp = String.valueOf(System.currentTimeMillis());
+            String resultsDir = "parameter_exploration_results_" + timestamp;
+            try {
+                Files.createDirectories(Paths.get(resultsDir));
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(frame, "Error creating results directory: " + ex.getMessage());
+                return;
+            }
+
+            // Run selected parameter sets
+            try (PrintWriter summaryWriter = new PrintWriter(new FileWriter(resultsDir + "/summary.csv"))) {
+                summaryWriter.println("ExperimentID,Description,CopDensity,AgentDensity,Legitimacy,JailTerm,Vision," +
+                        "AvgActive,AvgJailed,AvgQuiet,MaxActive,MaxJailed,MaxQuiet,MinActive,MinJailed,MinQuiet," +
+                        "OutbreakCount,RebellionFrequency,AvgRebellionSize,MaxRebellionSize,TotalRebellionSteps," +
+                        "StabilityIndex,RecoveryTime");
+
+                // Store data for parameter interaction analysis
+                List<Double> copDensities = new ArrayList<>();
+                List<Double> legitimacies = new ArrayList<>();
+                List<Double> stabilityIndices = new ArrayList<>();
+
+                // Run each selected parameter set
+                for (int i = 0; i < selectedSets.size(); i++) {
+                    ParameterSet params = selectedSets.get(i);
+                    RebellionStats stats = runExperiment(i + 1, params, summaryWriter, resultsDir);
+                    
+                    // Generate charts for this experiment
+                    ChartGenerator.generateTimeSeriesChart(
+                        stats.activeCounts,
+                        stats.jailedCounts,
+                        stats.quietCounts,
+                        String.valueOf(i + 1),
+                        resultsDir
+                    );
+                    
+                    ChartGenerator.generateRebellionSizeChart(
+                        stats.rebellionSizes,
+                        String.valueOf(i + 1),
+                        resultsDir
+                    );
+
+                    // Store data for parameter interaction analysis
+                    if (!copDensities.contains(params.copDensity)) {
+                        copDensities.add(params.copDensity);
+                    }
+                    if (!legitimacies.contains(params.legitimacy)) {
+                        legitimacies.add(params.legitimacy);
+                    }
+                    stabilityIndices.add(calculateStabilityIndex(stats.activeCounts));
+                }
+
+                // Generate parameter interaction chart
+                ChartGenerator.generateParameterInteractionChart(
+                    copDensities.stream().sorted().collect(Collectors.toList()),
+                    legitimacies.stream().sorted().collect(Collectors.toList()),
+                    stabilityIndices,
+                    resultsDir
+                );
+
+                JOptionPane.showMessageDialog(frame, "Simulation completed. Results saved in: " + resultsDir);
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(frame, "Error writing summary file: " + ex.getMessage());
+            }
+        });
+
+        frame.add(panel);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
     }
 
-    private static RebellionStats runExperiment(int experimentId, ParameterSet params, PrintWriter summaryWriter) {
-        System.out.printf("Running experiment %d (%s): cop=%.2f, agent=%.2f, leg=%.2f, jail=%d, vision=%d%n",
+    private static RebellionStats runExperiment(int experimentId, ParameterSet params, PrintWriter summaryWriter, String resultsDir) {
+        System.out.printf("Running experiment %d (%s): cop=%.2f, agent=%.2f, leg=%.2f, jail=%d, vision=%d, maxLocal=%.1f%n",
                 experimentId, params.description, params.copDensity, params.agentDensity, 
-                params.legitimacy, params.jailTerm, params.vision);
+                params.legitimacy, params.jailTerm, params.vision, params.maxLocalRelated);
 
         RebellionStats stats = new RebellionStats();
         boolean inRebellion = false;
@@ -151,7 +211,12 @@ public class ParameterExplorer {
 
         // Run simulation
         World world = new World(WORLD_SIZE, WORLD_SIZE);
-        world.setup(params.agentDensity, params.copDensity, 2.3, 0.1, params.legitimacy);
+        // Enable local legitimacy for the new parameter sets
+        boolean useLocalLegitimacy = params.description.contains("Local Legitimacy");
+        if (useLocalLegitimacy) {
+            Patch.setMaxLocalRelated(params.maxLocalRelated);
+        }
+        world.setup(params.agentDensity, params.copDensity, 2.3, 0.1, params.legitimacy, useLocalLegitimacy);
         
         for (int step = 0; step < SIMULATION_STEPS; step++) {
             world.tick();

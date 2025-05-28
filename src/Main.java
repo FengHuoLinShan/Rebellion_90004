@@ -22,7 +22,8 @@ public class Main {
             INITIAL_COP_DENSITY,
             K,
             THRESHOLD,
-            GOVERNMENT_LEGITIMACY
+            GOVERNMENT_LEGITIMACY,
+            false  // Default to not using local legitimacy
         );
 
         // Lists to store statistics

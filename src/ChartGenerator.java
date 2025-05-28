@@ -11,7 +11,8 @@ public class ChartGenerator {
     public static void generateTimeSeriesChart(List<Integer> activeCounts, 
                                              List<Integer> jailedCounts,
                                              List<Integer> quietCounts,
-                                             String experimentId) {
+                                             String experimentId,
+                                             String outputDir) {
         JPanel chartPanel = new TimeSeriesChart(activeCounts, jailedCounts, quietCounts, 
             "Experiment " + experimentId + " Time Series");
         
@@ -32,9 +33,10 @@ public class ChartGenerator {
         g2d.dispose();
         
         // Save the image
+        String filename = outputDir + "/experiment_" + experimentId + "_timeseries.png";
         try {
             ImageIO.write(image, "png", 
-                new File("parameter_exploration_results/experiment_" + experimentId + "_timeseries.png"));
+                new File(filename));
         } catch (IOException e) {
             System.err.println("Error saving time series chart: " + e.getMessage());
         }
@@ -42,7 +44,7 @@ public class ChartGenerator {
         frame.dispose();
     }
 
-    public static void generateRebellionSizeChart(List<Integer> rebellionSizes, String experimentId) {
+    public static void generateRebellionSizeChart(List<Integer> rebellionSizes, String experimentId, String outputDir) {
         JPanel chartPanel = new RebellionSizeChart(rebellionSizes, 
             "Experiment " + experimentId + " Rebellion Size Over Time");
         
@@ -63,9 +65,10 @@ public class ChartGenerator {
         g2d.dispose();
         
         // Save the image
+        String filename = outputDir + "/experiment_" + experimentId + "_rebellion_size.png";
         try {
             ImageIO.write(image, "png", 
-                new File("parameter_exploration_results/experiment_" + experimentId + "_rebellion_size.png"));
+                new File(filename));
         } catch (IOException e) {
             System.err.println("Error saving rebellion size chart: " + e.getMessage());
         }
@@ -75,7 +78,8 @@ public class ChartGenerator {
 
     public static void generateParameterInteractionChart(List<Double> copDensities,
                                                        List<Double> legitimacies,
-                                                       List<Double> stabilityIndices) {
+                                                       List<Double> stabilityIndices,
+                                                       String outputDir) {
         JPanel chartPanel = new ParameterInteractionChart(copDensities, legitimacies, stabilityIndices,
             "Parameter Interaction: Cop Density vs Legitimacy");
         
@@ -96,9 +100,10 @@ public class ChartGenerator {
         g2d.dispose();
         
         // Save the image
+        String filename = outputDir + "/parameter_interaction.png";
         try {
             ImageIO.write(image, "png", 
-                new File("parameter_exploration_results/parameter_interaction.png"));
+                new File(filename));
         } catch (IOException e) {
             System.err.println("Error saving parameter interaction chart: " + e.getMessage());
         }
