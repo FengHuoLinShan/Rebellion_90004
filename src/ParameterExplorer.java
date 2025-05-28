@@ -1,3 +1,8 @@
+/**
+ * ParameterExplorer class for conducting parameter sensitivity analysis of the rebellion model.
+ * This class provides a GUI interface for selecting and running different parameter sets,
+ * and generates visualizations of the results.
+ */
 import entity.World;
 import entity.Patch;
 import java.io.FileWriter;
@@ -14,21 +19,44 @@ import javax.swing.*;
 import java.awt.*;
 
 public class ParameterExplorer {
-    // Predefined parameter sets
+    /**
+     * ParameterSet class represents a single set of model parameters.
+     * Each set includes values for cop density, agent density, legitimacy,
+     * jail term, vision, and a description of the parameter set.
+     */
     private static final class ParameterSet {
-        final double copDensity;
-        final double agentDensity;
-        final double legitimacy;
-        final int jailTerm;
-        final int vision;
-        final String description;
-        final double maxLocalRelated;  // New parameter for cop-times influence
+        final double copDensity;      // Density of cops in the simulation
+        final double agentDensity;    // Density of agents in the simulation
+        final double legitimacy;      // Government legitimacy value
+        final int jailTerm;           // Duration of jail term for arrested agents
+        final int vision;             // Vision range of agents
+        final String description;     // Description of the parameter set
+        final double maxLocalRelated; // Maximum local related value for legitimacy calculation
 
+        /**
+         * Constructor for ParameterSet with default maxLocalRelated value.
+         * @param copDensity Density of cops
+         * @param agentDensity Density of agents
+         * @param legitimacy Government legitimacy
+         * @param jailTerm Jail term duration
+         * @param vision Agent vision range
+         * @param description Parameter set description
+         */
         ParameterSet(double copDensity, double agentDensity, double legitimacy, 
                     int jailTerm, int vision, String description) {
             this(copDensity, agentDensity, legitimacy, jailTerm, vision, description, 10.0);
         }
 
+        /**
+         * Constructor for ParameterSet with custom maxLocalRelated value.
+         * @param copDensity Density of cops
+         * @param agentDensity Density of agents
+         * @param legitimacy Government legitimacy
+         * @param jailTerm Jail term duration
+         * @param vision Agent vision range
+         * @param description Parameter set description
+         * @param maxLocalRelated Maximum local related value
+         */
         ParameterSet(double copDensity, double agentDensity, double legitimacy, 
                     int jailTerm, int vision, String description, double maxLocalRelated) {
             this.copDensity = copDensity;
@@ -41,7 +69,7 @@ public class ParameterExplorer {
         }
     }
 
-    // Define representative parameter sets
+    // Predefined parameter sets for different scenarios
     private static final ParameterSet[] PARAMETER_SETS = {
         // Baseline parameter set (original parameters)
         new ParameterSet(0.04, 0.7, 0.82, 30, 7, "Baseline"),
@@ -75,15 +103,19 @@ public class ParameterExplorer {
         new ParameterSet(0.09, 0.5, 0.95, 50, 5, "Extreme Control"),
 
         // New parameter sets for local legitimacy testing
-        new ParameterSet(0.04, 0.7, 0.82, 30, 7, "Local Legitimacy - High Cop Activity", 5.0),  // Stronger cop-times influence
-        new ParameterSet(0.04, 0.7, 0.82, 30, 7, "Local Legitimacy - Low Cop Activity", 15.0) // Weaker cop-times influence
+        new ParameterSet(0.04, 0.7, 0.82, 30, 7, "Local Legitimacy - High Cop Activity", 5.0),
+        new ParameterSet(0.04, 0.7, 0.82, 30, 7, "Local Legitimacy - Low Cop Activity", 15.0)
     };
 
+    // Simulation configuration constants
     private static final int WORLD_SIZE = 40;
     private static final int SIMULATION_STEPS = 100;
     private static final int REPETITIONS = 1;
 
-    // Add new statistics tracking
+    /**
+     * RebellionStats class for tracking statistics during simulation runs.
+     * Tracks outbreak count, maximum rebellion size, and various time series data.
+     */
     private static class RebellionStats {
         int outbreakCount = 0;  // Number of times rebellion outbreak occurred
         int maxRebellionSize = 0;  // Maximum number of active agents
@@ -94,6 +126,10 @@ public class ParameterExplorer {
         List<Integer> quietCounts = new ArrayList<>();  // Track quiet counts over time
     }
 
+    /**
+     * Main method that creates and displays the parameter selection GUI.
+     * @param args Command line arguments (not used)
+     */
     public static void main(String[] args) {
         // Create Swing frame for parameter selection
         JFrame frame = new JFrame("Parameter Explorer");
@@ -200,6 +236,14 @@ public class ParameterExplorer {
         frame.setVisible(true);
     }
 
+    /**
+     * Runs a single experiment with the given parameter set.
+     * @param experimentId Unique identifier for the experiment
+     * @param params Parameter set to use
+     * @param summaryWriter Writer for the summary CSV file
+     * @param resultsDir Directory to save results
+     * @return RebellionStats containing the experiment results
+     */
     private static RebellionStats runExperiment(int experimentId, ParameterSet params, PrintWriter summaryWriter, String resultsDir) {
         System.out.printf("Running experiment %d (%s): cop=%.2f, agent=%.2f, leg=%.2f, jail=%d, vision=%d, maxLocal=%.1f%n",
                 experimentId, params.description, params.copDensity, params.agentDensity, 
@@ -283,10 +327,21 @@ public class ParameterExplorer {
         return stats;
     }
 
+    /**
+     * Calculates the average value from a list of integers.
+     * @param values List of integer values
+     * @return Average value as a double
+     */
     private static double calculateAverage(List<Integer> values) {
         return values.stream().mapToInt(Integer::intValue).average().orElse(0.0);
     }
 
+    /**
+     * Calculates the stability index of a system based on active agent counts.
+     * Lower values indicate more stable systems.
+     * @param activeCounts List of active agent counts over time
+     * @return Stability index as a double
+     */
     private static double calculateStabilityIndex(List<Integer> activeCounts) {
         // Calculate the variance of active counts as a measure of stability
         double mean = calculateAverage(activeCounts);
