@@ -61,7 +61,7 @@ public class Patch {
     }
 
     /**
-     * 判断此地块是否为空（或者仅关押）
+     * Check if this patch is empty (or only contains jailed agents)
      */
     public boolean isEmptyOrJailedOnly(){
         boolean empty = (turtle == null);
