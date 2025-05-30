@@ -1,6 +1,6 @@
 package entity;
 
-//Turtle抽象父类
+//Abstract parent class for Turtle
 public abstract class Turtle {
     protected Location location;
     protected String color;
@@ -10,7 +10,7 @@ public abstract class Turtle {
     }
 
     /**
-     * Overrides:在控制agent移动时，先随机获取VISION内的randomLoc，再检测isEmptyOrJailedOnly()。Cops只在VISION内有active才move
+     * Overrides: When controlling agent movement, first randomly get randomLoc within VISION, then check isEmptyOrJailedOnly(). Cops only move when there is active within VISION
      */
     public void moveTo(Location randomLoc){
         location = randomLoc;
