@@ -1,7 +1,7 @@
 package entity;
 
 /**
- * 固定参数记录类
+ * Fixed parameter record class
  * K = 2.3
  * THRESHOLD = 0.1
  * VISION = 3
@@ -23,12 +23,12 @@ public final class AppConfig {
     public static final double INITIAL_COP_DENSITY = 0.04;
     public static final double INITIAL_AGENT_DENSITY = 0.7;
     
-    // NetLogo 中的额外参数
-    public static final boolean MOVEMENT = true; // 是否允许代理移动
+    // Additional parameters in NetLogo
+    public static final boolean MOVEMENT = true; // Whether to allow agent movement
 
     public static final String AGENT_COLOR = "GREEN";
     public static final String COPS_COLOR = "RED";
     private AppConfig() {
-        // 防止实例化
+        // Prevent instantiation
     }
 }
