@@ -1,7 +1,7 @@
 package entity;
 
 /**
- * 记录每个turtle和地块的横纵坐标
+ * Records the x and y coordinates for each turtle and plot
  */
 public class Location {
     private int x, y;
